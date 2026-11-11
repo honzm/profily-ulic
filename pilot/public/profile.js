@@ -2,7 +2,7 @@
 // matching the Streetmix illustrations (1 px = 1 cm).
 import { TYPES, SOURCES, PARKING_USE, PARKING_POSITION, TRAM_BEDS } from "./types.js";
 import { city, cityById, CITY_IDS, creditLines } from "./city.js";
-import { SIGNS, PLATES, signFile, plateFile } from "./signs.js";
+import { SIGNS, PLATES, signFile, plateFile, signLabel } from "./signs.js";
 
 const NS = "http://www.w3.org/2000/svg";
 const GROUND = 760; // roadway surface
@@ -1137,7 +1137,7 @@ function drawSigns(svg, profile, bounds) {
   const stack = (g, x, seg) => {
     const st = el("g", { class: "sign" }, g);
     const title = el("title", {}, st);
-    title.textContent = SIGNS[x.k] + (typeof x.v === "number" ? ` ${x.v} km/h` : "") + (x.plate ? ` (${PLATES[x.plate]})` : "");
+    title.textContent = signLabel(x) + (typeof x.v === "number" ? ` ${x.v} km/h` : "") + (x.plate ? ` (${PLATES[x.plate]})` : "");
     for (const [a, plate] of [[signArtOf(x, seg), false], [plateArtOf(x, seg), true]]) {
       const art = artFor(a);
       if (!art) continue;

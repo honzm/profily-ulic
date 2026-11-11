@@ -1,7 +1,7 @@
 import { TYPES, SOURCES, DEFAULT_WIDTH, ITEMS, PARKING_USE, PARKING_POSITION, TRAM_BEDS } from "./types.js";
 import { localFrame, nearestStreet, snapToWay, awayFromJunctions, centerOnStreet, mtvuPolygons, trackLines, techLines, esriPolygons, deriveProfile, MAX_REACH } from "./derive.js";
 import { bedOrtho } from "./ortho.js";
-import { deriveSigns, SIGNS, PLATES, MAX_PER_PART } from "./signs.js";
+import { deriveSigns, SIGNS, PLATES, MAX_PER_PART, signLabel } from "./signs.js";
 import { loadSprites, loadSigns, layoutSigns, buildSvg, exportCredits, mountEditor, svgString, twoLines, totalWidth, setArt, getArt, buildingStyle, BUILDING_STYLES, OFFICE_TYPES as OFFICE_LIKE } from "./profile.js";
 import * as sources from "./sources.js";
 import { MAPY_KEY } from "./config.js";
@@ -188,6 +188,12 @@ async function cutAt(lat, lon, keepWay = false, bearing = null, reach = null) {
     status("Načítám data z OSM…");
     let frame = localFrame(lat, lon);
     let osm = keepWay && osmCache ? osmCache.osm : await sources.osm(lat, lon, 80);
+    // The click-to-street flow requires the local OSM tiles generated in pilot/data/osm-tiles.
+    // Without them the app must fail fast with a clear instructions message instead of a silent null-result.
+    const needsLocalOsm = !osm || !Array.isArray(osm.elements) || osm.elements.length === 0;
+    if (needsLocalOsm) {
+      return status("Chybí lokální OSM dlaždice pro aplikaci. Vytvořte je do pilot/data/osm-tiles podle pilot/README.md, pak stránku znovu načtěte.", "error");
+    }
     let near;
     if (keepWay && osmCache) {
       const pts = osmCache.way.geometry.map((g) => frame.toXY(g.lon, g.lat));
@@ -1161,7 +1167,7 @@ function renderEditor(p) {
   items.append(add);
   r2.append(items);
   // Traffic signs under this part (at most MAX_PER_PART).
-  row().append(signTags(s.signs, MAX_PER_PART, (list) => { if (list.length) s.signs = list; else delete s.signs; done(); }));
+  row().append(signTags(s, s.signs, MAX_PER_PART, (list) => { if (list.length) s.signs = list; else delete s.signs; done(); }));
   row().append(
     btn("← Posunout", () => { if (i > 0) { [segs[i - 1], segs[i]] = [segs[i], segs[i - 1]]; done(i - 1); } }),
     btn("Posunout →", () => { if (i < segs.length - 1) { [segs[i + 1], segs[i]] = [segs[i], segs[i + 1]]; done(i + 1); } }),
@@ -1181,10 +1187,10 @@ function renderEditor(p) {
 }
 
 // Tags of traffic signs with ×, and a select to add one (a speed limit asks for its number).
-function signTags(list = [], max, set) {
+function signTags(seg, list = [], max, set) {
   const box = Object.assign(document.createElement("span"), { className: "items" });
   box.textContent = "Značky: ";
-  const name = (x) => SIGNS[x.k] + (typeof x.v === "number" ? ` ${x.v}` : "") + (x.plate ? `, ${PLATES[x.plate]}` : "");
+  const name = (x) => signLabel(x) + (typeof x.v === "number" ? ` ${x.v}` : "") + (x.plate ? `, ${PLATES[x.plate]}` : "");
   list.forEach((x, k) => {
     const b = document.createElement("button");
     b.className = "tag";
@@ -1204,6 +1210,9 @@ function signTags(list = [], max, set) {
         const v = Number(prompt("Nejvyšší dovolená rychlost (km/h):", "30"));
         if (!(v > 0 && v <= 200)) return render();
         x.v = Math.round(v);
+      }
+      if (k === "ip4c" && seg && seg.dir) {
+        seg.bikeDir = seg.dir === "forward" ? "backward" : "forward";
       }
       set([...list, x]);
     };

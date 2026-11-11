@@ -29,7 +29,10 @@ export function cleanProfile(p, what = "profil") {
     if ("bed" in s && !(s.bed in TRAM_BEDS)) delete s.bed;
     for (const k of ["withBus", "bedGuess"]) if (k in s && s[k] !== true) delete s[k];
     if ("roadClass" in s && !/^(dalnice|mk[1-4]|sil[1-3])$/.test(s.roadClass)) delete s.roadClass;
-    if ("signs" in s) s.signs = cleanSigns(s.signs).slice(0, MAX_PER_PART);
+    if ("signs" in s) {
+      s.signs = cleanSigns(s.signs).slice(0, MAX_PER_PART);
+      if (s.signs.some((x) => x.k === "ip4c") && s.dir && !s.bikeDir) s.bikeDir = s.dir === "forward" ? "backward" : "forward";
+    }
     if (s.signs && !s.signs.length) delete s.signs;
     s.items = Array.isArray(s.items) ? s.items.filter((it) => it && it.kind in ITEMS && num(it.f, 0, 1)) : [];
   }
@@ -53,10 +56,15 @@ export function cleanProfile(p, what = "profil") {
 // Traffic signs (signs.js): known keys, a speed as a number, a known plate, a direction word.
 function cleanSigns(list) {
   if (!Array.isArray(list)) return [];
-  return list.filter((x) => x && Object.hasOwn(SIGNS, x.k)).map((x) => ({ k: x.k,
-    ...(num(x.v, 1, 200) ? { v: x.v } : {}),
-    ...(Object.hasOwn(PLATES, x.plate) ? { plate: x.plate } : {}),
-    ...(["forward", "backward"].includes(x.dir) ? { dir: x.dir } : {}) })).slice(0, 12);
+  return list.filter((x) => x && (Object.hasOwn(SIGNS, x.k) || (x.k === "oneway" && x.plate === "protismer") || (x.k === "ip4c"))).map((x) => {
+    const contra = x.k === "ip4c" || (x.k === "oneway" && x.plate === "protismer");
+    const normalized = contra ? { k: "ip4c" } : { k: x.k };
+    return { ...normalized,
+      ...(num(x.v, 1, 200) ? { v: x.v } : {}),
+      ...(!contra && Object.hasOwn(PLATES, x.plate) ? { plate: x.plate } : {}),
+      ...(["forward", "backward"].includes(x.dir) ? { dir: x.dir } : {}),
+    };
+  }).slice(0, 12);
 }
 
 // Position of the cut: numbers in and around the Czech Republic, reach of each side 1–70 m; else no cut.

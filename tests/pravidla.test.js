@@ -145,6 +145,14 @@ test("třída TSK: skupina ČSN 73 6110 pro varování o šířce pruhu", () => 
   assert.deepEqual(added.map((f) => `${f.i}:${f.level}`), ["1:min"]);
 });
 
+test("cyklisté v protisměru jednosměrky mají minimální šířku podle TP 179", () => {
+  const lvl = (width) => checkRules({ segments: [{ type: "pruh", dir: "forward", bikeDir: "backward", width }] }).map((f) => f.level).join();
+  assert.equal(lvl(3), "");
+  const low = lvl(2.9);
+  assert.ok(low.includes("zaklad"));
+  assert.ok(low.includes("min"));
+});
+
 test("strop pruhu v MK I je 3,75 m, zbytek je krajnice", () => {
   const section = techLines({ features: [{ attributes: { CTMTP_KOD: "od_usek", MK: 1, SIL: 0, DALNICE: 0, TYP: 3 }, geometry: { paths: [[[ll(0.5, -50).lon, ll(0.5, -50).lat], [ll(0.5, 50).lon, ll(0.5, 50).lat]]] } }] }, frame);
   const p = road(10.5, { highway: "secondary" }, { lines: section });

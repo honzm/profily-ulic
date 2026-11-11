@@ -31,3 +31,19 @@ evaluation/*/data/
 
 # Wrangler (Cloudflare) working files of logging/
 .wrangler/
+
+# Local setup and generated debug artifacts; rebuild these from the project scripts.
+node_modules/
+test-results/
+playwright-report/
+coverage/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.log
+screenshot.png
+debug-startup.spec.js
+
+# Keep this file local to the workspace; don't commit ignore-policy churn.
+.gitignore

@@ -16,6 +16,7 @@ export const SIGNS = {
   b28: "B 28 Zákaz zastavení",
   b29: "B 29 Zákaz stání",
   oneway: "IP 4b / B 2 Jednosměrný provoz",
+  ip4c: "IP 4c / B 2 Jednosměrný provoz s protisměrným provozem cyklistů",
   c8a: "C 8a Stezka pro cyklisty",
   c9a: "C 9a Stezka pro chodce a cyklisty",
   c10a: "C 10a Stezka pro chodce a cyklisty dělená",
@@ -34,6 +35,18 @@ export const SIGNS = {
   ip27a: "IZ 6a Pěší zóna",
   cyklozona: "IZ 9a Zóna pro cyklisty",
 };
+export function normalizeSign(x = {}) {
+  if (!x || typeof x !== "object") return { k: "oneway" };
+  if (x.k === "ip4c" || (x.k === "oneway" && x.plate === "protismer")) return { k: "ip4c" };
+  if (x.k === "oneway") return { k: "oneway" };
+  return { k: x.k };
+}
+export function signLabel(x = {}) {
+  const y = normalizeSign(x);
+  if (y.k === "ip4c") return SIGNS.ip4c;
+  if (y.k === "oneway") return SIGNS.oneway;
+  return SIGNS[y.k] || String(y.k || "");
+}
 // Dodatkové tabulky (plate) of a sign: text of E 13, or a key of a pictogram.
 export const PLATES = { kola: "s cyklisty", kolo: "i pro cyklisty", protismer: "cyklisté v protisměru", obsluha: "Mimo dopravní obsluhy", podelne: "podélné", kolme: "kolmé", sikme: "šikmé" };
 
@@ -104,7 +117,7 @@ export function deriveSigns(profile, tags = {}, ctx = {}) {
       } else out.push({ k: "ip11a", ...(s.orient ? { plate: s.orient } : {}) });
     }
     if (lanes.includes(i)) {
-      if (oneway) out.push({ k: "oneway", ...(contra ? { plate: "protismer" } : {}) });
+      if (oneway) out.push(contra ? { k: "ip4c" } : { k: "oneway" });
       // Speed per lane (maxspeed:lanes counts the lanes from the left in the way's direction), per direction,
       // or of the street; a zone sign says its own speed.
       const forward = lanes.filter((j) => (segs[j].dir || "forward") === "forward");
@@ -136,8 +149,9 @@ export function deriveSigns(profile, tags = {}, ctx = {}) {
 // seg: the part the sign stands under (a one-way sign follows its lane's direction).
 export function signFile(s, seg) {
   const dir = s.dir ?? seg?.dir;
+  const contra = s.k === "ip4c" || (s.k === "oneway" && s.plate === "protismer");
   // IP 4c (vyhl. 205/2025): one-way with contraflow cyclists, in place of IP 4b + E 12a.
-  if (s.k === "oneway") return dir === "backward" ? "B2" : s.plate === "protismer" ? "IP4c" : "IP4b";
+  if (s.k === "oneway" || s.k === "ip4c") return dir === "backward" ? "B2" : contra ? "IP4c" : "IP4b";
   // Oblique stalls have the sign of perpendicular ones (IP 11b, Bára).
   if (s.k === "ip11a") return s.plate === "podelne" ? "IP11c" : s.plate ? "IP11b" : "IP11a";
   if (s.k === "ip27a" && s.plate === "kola") return "IZ6a-kola";
@@ -149,7 +163,7 @@ export function signFile(s, seg) {
 }
 // The plate under a sign: contraflow cyclists are E 12a under IP 4b and E 12b under B 2; E 13 carries a text.
 export function plateFile(s, seg) {
-  if (s.plate === "protismer") return (s.dir ?? seg?.dir) === "backward" ? "E12b" : null; // IP 4c says it itself
+  if (s.k === "ip4c" || s.plate === "protismer") return (s.dir ?? seg?.dir) === "backward" ? "E12b" : null; // IP 4c says it itself
   if (s.plate === "obsluha") return "E13";
   if (s.plate === "kolo") return "C8a"; // the round bike symbol under the bus of IP 20a
   return null;

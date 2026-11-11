@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deriveSigns, signFile, plateFile, streetSigns } from "../pilot/public/signs.js";
+import { deriveSigns, signFile, plateFile, streetSigns, signLabel, normalizeSign } from "../pilot/public/signs.js";
 
 const keys = (list) => (list || []).map((s) => s.k + (s.v ? `:${s.v}` : "") + (s.plate ? `+${s.plate}` : ""));
 const files = (p) => p.segments.map((s) => (s.signs || []).map((x) => signFile(x, s)));
@@ -21,6 +21,20 @@ test("jednosměrka pod pruhem: IP 4b ve směru pohledu, IP 4c s cyklisty v proti
   assert.deepEqual(files(p)[1], ["B2"]);
   const q = deriveSigns({ segments: [{ type: "pruh" }] }, { highway: "residential", oneway: "yes" });
   assert.deepEqual(files(q), [["IP4b"]]);
+});
+
+test("IP 4c je rozpoznána jako samostatný klíč i v popisku a v vykreslení", () => {
+  const p = deriveSigns({ segments: [{ type: "pruh", dir: "forward" }] }, { highway: "residential", oneway: "yes" });
+  p.segments[0].signs = [{ k: "ip4c" }];
+  assert.equal(signFile(p.segments[0].signs[0], p.segments[0]), "IP4c");
+  assert.equal(signLabel(p.segments[0].signs[0]), "IP 4c / B 2 Jednosměrný provoz s protisměrným provozem cyklistů");
+  p.segments[0].dir = "backward";
+  assert.equal(signFile(p.segments[0].signs[0], p.segments[0]), "B2");
+});
+
+test("nahraná cykloobousměrka se normalizuje na novou volbu v dropdownu", () => {
+  assert.deepEqual(normalizeSign({ k: "oneway", plate: "protismer" }), { k: "ip4c" });
+  assert.deepEqual(normalizeSign({ k: "ip4c" }), { k: "ip4c" });
 });
 
 test("šikmé stání má stejnou značku jako kolmé", () => {

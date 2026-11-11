@@ -68,6 +68,13 @@ export function checkRules(profile) {
     const label = TYPES[s.type]?.label || s.type;
     if (s.width < l.min - 0.005) out.push({ i, level: "min", text: `${label} ${fmt(s.width)} je pod minimem (${l.why}).` });
     else if (s.width < l.zaklad - 0.005) out.push({ i, level: "zaklad", text: `${label} ${fmt(s.width)} je užší než základ (${l.why}).` });
+    if (typeof s.bikeDir === "string" && typeof s.dir === "string" && s.bikeDir !== s.dir) {
+      const min = ["cyklopruh", "ochranny_pruh"].includes(s.type) ? (s.type === "ochranny_pruh" ? 1.25 : 1.5) : 3;
+      const why = ["cyklopruh", "ochranny_pruh"].includes(s.type)
+        ? "TP 179 pro cyklistický protisměr v cyklopruhu"
+        : "TP 179 pro cyklisty v protisměru jednosměrky";
+      if (s.width < min - 0.005) out.push({ i, level: "min", text: `${label} ${fmt(s.width)} je užší než minimum ${fmt(min)} pro cyklisty v protisměru (${why}).` });
+    }
   });
   // A tram belt (adjacent tram parts) of two tracks, a reserved tram lane or a separate bed, needs 6.5 m at
   // least, 7 m as the standard and 8 m with the overhead-line poles between the tracks (Manuál C.2; Bára:
