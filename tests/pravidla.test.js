@@ -153,6 +153,19 @@ test("cyklisté v protisměru jednosměrky mají minimální šířku podle TP 1
   assert.ok(low.includes("min"));
 });
 
+test("jednosměrka s cyklisty v protisměru: vozovka 4 m, nejméně 3 m (Manuál C.2)", () => {
+  const ip4c = [{ k: "oneway", plate: "protismer" }];
+  const lvl = (segs) => checkRules({ segments: segs }).map((f) => `${f.i}:${f.level}`).join();
+  const park = { type: "parkovani", width: 2, orient: "podelne" };
+  assert.equal(lvl([park, { type: "pruh", width: 3.5, signs: ip4c }, park]), "1:zaklad");
+  assert.equal(lvl([{ type: "pruh", width: 2.9, signs: ip4c }]), "0:min");
+  // Lane and hard shoulder count together (Orlická 4,5 + 1,1 m); no lane warning of its own.
+  assert.equal(lvl([park, { type: "pruh_piktokoridor", width: 3, signs: ip4c }, { type: "krajnice", width: 1.1 }, park]), "");
+  // A contraflow cycle lane: the lane is checked as a lane.
+  assert.equal(lvl([{ type: "cyklopruh", width: 1.5 }, { type: "pruh", width: 3.5, signs: ip4c }]), "");
+  assert.equal(lvl([{ type: "pruh", width: 3.5, signs: [{ k: "oneway" }] }]), "");
+});
+
 test("strop pruhu v MK I je 3,75 m, zbytek je krajnice", () => {
   const section = techLines({ features: [{ attributes: { CTMTP_KOD: "od_usek", MK: 1, SIL: 0, DALNICE: 0, TYP: 3 }, geometry: { paths: [[[ll(0.5, -50).lon, ll(0.5, -50).lat], [ll(0.5, 50).lon, ll(0.5, 50).lat]]] } }] }, frame);
   const p = road(10.5, { highway: "secondary" }, { lines: section });

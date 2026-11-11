@@ -41,14 +41,19 @@ export function normalizeSign(x = {}) {
   if (x.k === "oneway") return { k: "oneway" };
   return { k: x.k };
 }
+// Dodatkové tabulky (plate) of a sign: text of E 13, or a key of a pictogram.
+export const PLATES = { kola: "s cyklisty", kolo: "i pro cyklisty", protismer: "cyklisté v protisměru", obsluha: "Mimo dopravní obsluhy", podelne: "podélné", kolme: "kolmé", sikme: "šikmé" };
+// Signs the palette offers with a plate, as signs of their own: one-way with contraflow cyclists is IP 4c (B 2 +
+// E 12b when the lane comes towards the viewer), not IP 4b with a plate (a user, 11. 11. 2026).
+export const SIGN_CHOICES = { "oneway+protismer": { k: "oneway", plate: "protismer", label: "IP 4c / B 2 + E 12b Jednosměrný provoz, cyklisté v protisměru" } };
+// The label of a sign in Návrh and in the title of a drawn sign. Legacy one-way+protismer data is normalized to the
+// canonical IP 4c sign so the UI and loaded profiles stay consistent.
 export function signLabel(x = {}) {
   const y = normalizeSign(x);
   if (y.k === "ip4c") return SIGNS.ip4c;
   if (y.k === "oneway") return SIGNS.oneway;
   return SIGNS[y.k] || String(y.k || "");
 }
-// Dodatkové tabulky (plate) of a sign: text of E 13, or a key of a pictogram.
-export const PLATES = { kola: "s cyklisty", kolo: "i pro cyklisty", protismer: "cyklisté v protisměru", obsluha: "Mimo dopravní obsluhy", podelne: "podélné", kolme: "kolmé", sikme: "šikmé" };
 
 const ROAD = new Set(["pruh", "pruh_piktokoridor", "bus", "bus_cyklo", "tramvaj_v_pruhu", "obsluzna"]);
 const CARRIAGEWAY = new Set([...ROAD, "parkovani", "cyklopruh", "ochranny_pruh", "krajnice", "tramvaj"]);

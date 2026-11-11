@@ -402,6 +402,10 @@ pruh 3 m, ochranný cyklopruh 1,5 m, kolmé stání 5 m, tramvajový pás bez sl
 upozornění se část vybere. Tramvajový pás je vyhrazený tramvajový pruh i samostatné těleso, ne tramvaj v pruhu
 s auty.
 
+Jednosměrka s cyklisty v protisměru (značka IP 4c pod pruhem) bez vlastního cyklopruhu: vozovka, tedy pruhy
+s krajnicí a šrafami bez stání, červeně pod 3 m, oranžově pod 4 m (Manuál C.2: základ 4 m, při velmi nízké
+intenzitě 3 m, při vyšší až 4,5 m; Bára 11. 11. 2026). Nahrazuje varování jednotlivých pruhů.
+
 Jízdní pruh v Praze podle zatřídění TSK (skupina ČSN 73 6110; MK I a II jsou podle zák. 13/1997 Sb. sběrné
 nebo rychlostní, TSK to nerozlišuje, proto skupina B): dálnice červeně pod 3 m, oranžově pod 3,5 m; MK I, MK II
 a silnice I. a II. třídy červeně pod 3 m; MK III a silnice III. třídy červeně pod 2,75 m, oranžově pod 3 m;

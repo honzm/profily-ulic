@@ -57,6 +57,10 @@ function limits(s, segs, i) {
 // Tram parts that make a belt of their own: the reserved tram lane and the separate tram bed (not the tram in a
 // lane with cars).
 const BELT = new Set(["tramvaj_pruh", "tramvaj"]);
+// The parts of a one-way carriageway that cars and contraflow cyclists share, and the cycle lanes that give the
+// cyclists a lane of their own.
+const CONTRA_RUN = new Set(["pruh", "pruh_piktokoridor", "krajnice"]);
+const BIKE_LANE = new Set(["cyklopruh", "ochranny_pruh"]);
 
 // [{i, level, text}] for the parts of a profile that break the rules.
 export function checkRules(profile) {
@@ -76,6 +80,23 @@ export function checkRules(profile) {
       if (s.width < min - 0.005) out.push({ i, level: "min", text: `${label} ${fmt(s.width)} je užší než minimum ${fmt(min)} pro cyklisty v protisměru (${why}).` });
     }
   });
+  // A one-way carriageway with contraflow cyclists and no cycle lane of their own (IP 4c): its lanes with the
+  // hard shoulder and hatching, without parking, 4 m as the basic width and 3 m at very low volumes (Manuál
+  // C.2; 4.5 m at higher volumes; Bára 11. 11. 2026). It takes the place of the lanes' own warnings.
+  for (let i = 0; i < segs.length; i++) {
+    if (!CONTRA_RUN.has(segs[i].type)) continue;
+    let j = i, w = 0;
+    while (j < segs.length && CONTRA_RUN.has(segs[j].type)) w += segs[j++].width;
+    const run = segs.slice(i, j);
+    const bikeLane = [segs[i - 1], segs[j]].some((x) => BIKE_LANE.has(x?.type));
+    if (!bikeLane && run.some((x) => x.signs?.some((g) => g.k === "oneway" && g.plate === "protismer"))) {
+      for (let k = out.length - 1; k >= 0; k--) if (out[k].i >= i && out[k].i < j) out.splice(k, 1);
+      const why = "jednosměrka s cyklisty v protisměru: základ 4 m, při velmi nízké intenzitě 3 m, při vyšší až 4,5 m (Manuál C.2)";
+      if (w < 3 - 0.005) out.push({ i, level: "min", text: `Vozovka ${fmt(w)} je pod minimem (${why}).` });
+      else if (w < 4 - 0.005) out.push({ i, level: "zaklad", text: `Vozovka ${fmt(w)} je užší než základ (${why}).` });
+    }
+    i = j - 1;
+  }
   // A tram belt (adjacent tram parts) of two tracks, a reserved tram lane or a separate bed, needs 6.5 m at
   // least, 7 m as the standard and 8 m with the overhead-line poles between the tracks (Manuál C.2; Bára:
   // 6.5–7 m without poles is orange).
